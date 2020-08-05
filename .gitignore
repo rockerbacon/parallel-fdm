@@ -1,5 +1,5 @@
-gol
 *.txt
 *.swp
-gol-parallel
 *.bin
+mdf
+mdf-parallel
