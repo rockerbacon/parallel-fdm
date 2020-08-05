@@ -58,8 +58,8 @@ int main (int ac, char **av){
   unsigned int size = width*height*depth;
 
   unsigned int tsteps = (unsigned int) (time / deltaT);
-  fprintf(stdout, "\nSimulação - Domínio(x = %u, y = %u, z = %u, t = %u, threads = %d\n", width-2, height-2, depth-2, tsteps, threads);
-  fprintf(stdout, "Dt(%f) Dh(%f)\n", deltaT, deltaH);
+  fprintf(stdout, "\nSimulação - Domínio(x = %u, y = %u, z = %u, t = %u), threads = %d\n", width-2, height-2, depth-2, tsteps, threads);
+  fprintf(stdout, "Dt(%lf) Dh(%lf)\n", deltaT, deltaH);
 
   u0 = (double*) calloc (size, sizeof(double));
   u1 = (double*) calloc (size, sizeof(double));
@@ -105,15 +105,16 @@ void mdf_heat(double *  u0,
     const double alpha = deltaT / (deltaH * deltaH);
     assert(alpha < STABILITY);
 
-    unsigned int step = tsteps / 20;
+    unsigned int step = tsteps / 20 + 1;
 
     const unsigned depthLimit = depth - 1;
     const unsigned heightLimit = height - 1;
 
     const unsigned depthOffset = depth*height;
 
+    #pragma omp parallel num_threads(threads)
     for (unsigned int steps = 0; steps < tsteps; steps++){
-      #pragma omp parallel for num_threads(threads)
+      #pragma omp for
       for (unsigned int i = 1; i < depthLimit; i++){
         for (unsigned int j = 1; j < heightLimit; j++){
           unsigned center = coord(i, j, 1);
@@ -134,13 +135,16 @@ void mdf_heat(double *  u0,
         }
       }
 
-      double *aux = u0;
-      u0 = u1;
-      u1 = aux;
+      #pragma omp single
+      {
+        double *aux = u0;
+        u0 = u1;
+        u1 = aux;
 
-      if ((steps % step) == 0){
-        fprintf(stdout, ".");
-        fflush(stdout);
+        if ((steps % step) == 0){
+          fprintf(stdout, ".");
+          fflush(stdout);
+        }
       }
     }
 }
