@@ -1,5 +1,5 @@
 CPUC      = gcc
-CFLAGS = -O3 --std=c11 -m64	 #     -Wunused-variable #-Wno-conversion-null -Wdelete-non-virtual-dtor
+CFLAGS = -O3 --std=c11 -m64 -Werror -Wall -Wextra	-Wno-unused-parameter #     -Wunused-variable #-Wno-conversion-null -Wdelete-non-virtual-dtor
 DEFS      =
 INCLUDES  =
 LIBDIR   = -L/usr/lib
