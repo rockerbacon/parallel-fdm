@@ -54,13 +54,18 @@ int main (int ac, char **av){
   if (threads == -1) threads = omp_get_num_procs();
 
 
-  unsigned int width = (unsigned int) (continuousWidth / deltaH) + 2; //Number of points in X axis
-  unsigned int height = (unsigned int) (continuousHeight / deltaH) + 2;
-  unsigned int depth = (unsigned int) (continuousDepth / deltaH) + 2;
+  unsigned int fullWidth = (unsigned int) (continuousWidth / deltaH) + 2; //Number of points in X axis
+  unsigned int fullHeight = (unsigned int) (continuousHeight / deltaH) + 2;
+  unsigned int fullDepth = (unsigned int) (continuousDepth / deltaH) + 2;
+  unsigned int fullSize = fullWidth*fullHeight*fullDepth;
+  
+  unsigned int width = ceil(fullWidth / 2);
+  unsigned int height = ceil(fullHeight /2);
+  unsigned int depth = ceil(fullDepth / 2);
   unsigned int size = width*height*depth;
 
   unsigned int tsteps = (unsigned int) (time / deltaT);
-  fprintf(stdout, "\nSimulação - Domínio(x = %u, y = %u, z = %u, t = %u), threads = %d\n", width-2, height-2, depth-2, tsteps, threads);
+  fprintf(stdout, "\nSimulação - Domínio(x = %u, y = %u, z = %u, t = %u), threads = %d\n", fullWidth-2, fullHeight-2, fullDepth-2, tsteps, threads);
   fprintf(stdout, "Dt(%lf) Dh(%lf)\n", deltaT, deltaH);
 
   u0 = (double*) calloc (size, sizeof(double));
@@ -71,8 +76,8 @@ int main (int ac, char **av){
     for (unsigned j = 0; j < height; j++) {
       for (unsigned k = 0; k < width; k++) {
         if (
-          k == 0 || j == 0 || i == 0 ||
-          k == depth-1 || j == height-1 || i == depth-1
+          k == 0 || j == 0 || i == 0 /*||
+          k == depth-1 || j == height-1 || i == depth-1*/
         ) {
           u0[coord(i, j, k)] = temp;
           u1[coord(i, j, k)] = temp;
@@ -112,14 +117,14 @@ void mdf_heat(double *  u0,
 
     unsigned int step = tsteps / 20 + 1;
 
-    const unsigned depthLimit = depth/2;
-    const unsigned heightLimit = height/2;
-    const unsigned widthLimit = width/2;
+    // const unsigned depthLimit = depth/2;
+    // const unsigned heightLimit = height/2;
+    // const unsigned widthLimit = width/2;
     const unsigned depthOffset = width*height;
 
-    const unsigned backMirrorPlane = depthLimit - 2;
-    const unsigned sideMirrorPlane = widthLimit - 2;
-    const unsigned bottomMirrorPlane = heightLimit - 2;
+    // const unsigned backMirrorPlane = depthLimit - 2;
+    // const unsigned sideMirrorPlane = widthLimit - 2;
+    // const unsigned bottomMirrorPlane = heightLimit - 2;
 
     /* const unsigned mirrorRight = width/2; */
     /* const unsigned mirrorDown = height/2*width; */
@@ -130,43 +135,26 @@ void mdf_heat(double *  u0,
       // collapsing this + no wait can improve performance
       // but when I tried it introduced race conditions when filling the border
       #pragma omp for
-      for (unsigned i = 1; i < depthLimit; i++){
-        for (unsigned j = 1; j < heightLimit; j++){
-          for (unsigned k = 1; k < widthLimit; k++) {
+      for (unsigned i = 1; i < depth; i++){
+        unsigned iMirrorNeighbor = (i == (depth - 1)) * 2 * depthOffset;
+        for (unsigned j = 1; j < height; j++){
+          unsigned jMirrorNeighbor = (j == (height - 1)) * 2 * height;
+          for (unsigned k = 1; k < width; k++) {
+            unsigned kMirrorNeighbor = (k == (width - 1)) * 2;
+
             unsigned center = coord(i, j, k);
 
             unsigned left = center-1;
-            unsigned right = center+1;
+            unsigned right = center+1 - kMirrorNeighbor;
             unsigned up = center-height;
-            unsigned down = center+height;
+            unsigned down = center+height - jMirrorNeighbor; 
             unsigned top = center-depthOffset;
-            unsigned bottom = center+depthOffset;
+            unsigned bottom = center+depthOffset - iMirrorNeighbor;
 
             double surroundings = u0[top] + u0[bottom] + u0[up] + u0[down] + u0[left] + u0[right];
 
-            u1[center] = alpha * (surroundings  - 6.0f * u0[center]) + u0[center];
+            u1[center] =alpha * (surroundings  - 6.0f * u0[center]) + u0[center];
           }
-        }
-      }
-
-      #pragma omp for nowait
-      for (unsigned j = 1; j < heightLimit; j++) {
-        for(unsigned k = 1; k < widthLimit; k++) {
-          u1[coord(depthLimit, j, k)] = u1[coord(backMirrorPlane, j, k)];
-        }
-      }
-
-      #pragma omp for nowait
-      for (unsigned i = 1; i < depthLimit; i++) {
-        for (unsigned k = 1; k < widthLimit; k++) {
-          u1[coord(i, heightLimit, k)] = u1[coord(i, bottomMirrorPlane, k)];
-        }
-      }
-
-      #pragma omp for
-      for (unsigned i = 1; i < depthLimit; i++) {
-        for (unsigned j = 1; j < heightLimit; j++) {
-          u1[coord(i, j, widthLimit)] = u1[coord(i, j, sideMirrorPlane)];
         }
       }
 
