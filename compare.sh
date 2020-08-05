@@ -13,6 +13,8 @@ args="10.0 42 42 42 100 1"
 
 comp_type=$2
 
+rm -f main-mdf-parallel.c.bin
+
 make
 exit_status=$?
 if [ "$exit_status" != "0" ]; then

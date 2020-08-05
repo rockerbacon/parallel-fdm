@@ -107,17 +107,24 @@ void mdf_heat(double *  u0,
 
     unsigned int step = tsteps / 20 + 1;
 
-    const unsigned depthLimit = depth - 1;
-    const unsigned heightLimit = height - 1;
+    const unsigned depthLimit = (depth - 1)/2;
+    const unsigned heightLimit = (height - 1)/2;
+    const unsigned widthLimit = (width - 1)/2;
+    const unsigned depthOffset = width*height;
 
-    const unsigned depthOffset = depth*height;
+    /* const unsigned mirrorRight = width/2; */
+    /* const unsigned mirrorDown = height/2*width; */
+    /* const unsigned mirrorBack = depth/2*depthOffset; */
 
     #pragma omp parallel num_threads(threads)
-    for (unsigned int steps = 0; steps < tsteps; steps++){
+    for (unsigned steps = 0; steps < tsteps; steps++){
       #pragma omp for
-      for (unsigned int i = 1; i < depthLimit; i++){
-        for (unsigned int j = 1; j < heightLimit; j++){
-          for (unsigned center = coord(i, j, 1); center < coord(i, j, 1) + width - 2; center++) {
+      for (unsigned i = 1; i < depthLimit; i++){
+        for (unsigned j = 1; j < heightLimit; j++){
+          unsigned line = coord(i, j, 1);
+          for (unsigned k = 1; k < widthLimit; k++) {
+            unsigned center = line+k;
+
             unsigned left = center-1;
             unsigned right = center+1;
             unsigned up = center-height;
@@ -126,7 +133,8 @@ void mdf_heat(double *  u0,
             unsigned bottom = center+depthOffset;
 
             double surroundings = u0[top] + u0[bottom] + u0[up] + u0[down] + u0[left] + u0[right];
-            u1[center] =  alpha * (surroundings  - 6.0f * u0[center]) + u0[center];
+
+            u1[center] = alpha * (surroundings  - 6.0f * u0[center]) + u0[center];
           }
         }
       }
