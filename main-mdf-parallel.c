@@ -57,8 +57,7 @@ int main (int ac, char **av){
   unsigned int fullWidth = (unsigned int) (continuousWidth / deltaH) + 2; //Number of points in X axis
   unsigned int fullHeight = (unsigned int) (continuousHeight / deltaH) + 2;
   unsigned int fullDepth = (unsigned int) (continuousDepth / deltaH) + 2;
-  unsigned int fullSize = fullWidth*fullHeight*fullDepth;
-  
+
   unsigned int width = ceil(fullWidth / 2);
   unsigned int height = ceil(fullHeight /2);
   unsigned int depth = ceil(fullDepth / 2);
@@ -136,24 +135,24 @@ void mdf_heat(double *  u0,
       // but when I tried it introduced race conditions when filling the border
       #pragma omp for
       for (unsigned i = 1; i < depth; i++){
-        unsigned iMirrorNeighbor = (i == (depth - 1)) * 2 * depthOffset;
+        unsigned iMirrorNeighbor = (i == (depth - 1)) * depthOffset;
         for (unsigned j = 1; j < height; j++){
-          unsigned jMirrorNeighbor = (j == (height - 1)) * 2 * height;
+          unsigned jMirrorNeighbor = (j == (height - 1)) * height;
           for (unsigned k = 1; k < width; k++) {
-            unsigned kMirrorNeighbor = (k == (width - 1)) * 2;
+            unsigned kMirrorNeighbor = (k == (width - 1));
 
             unsigned center = coord(i, j, k);
 
             unsigned left = center-1;
             unsigned right = center+1 - kMirrorNeighbor;
             unsigned up = center-height;
-            unsigned down = center+height - jMirrorNeighbor; 
+            unsigned down = center+height - jMirrorNeighbor;
             unsigned top = center-depthOffset;
             unsigned bottom = center+depthOffset - iMirrorNeighbor;
 
             double surroundings = u0[top] + u0[bottom] + u0[up] + u0[down] + u0[left] + u0[right];
 
-            u1[center] =alpha * (surroundings  - 6.0 * u0[center]) + u0[center];
+            u1[center] = alpha * (surroundings  - 6.0 * u0[center]) + u0[center];
           }
         }
       }
@@ -178,69 +177,61 @@ void save2Text(double *u,
                const unsigned int width,
                const unsigned int height,
                const unsigned int depth){
-   FILE *ptr = fopen("mdf-parallel.txt", "w+");
-   fprintf(stdout, "\nSaving mdf-parallel.txt");
-   fflush(stdout);
-   assert(ptr != NULL);
+  FILE *ptr = fopen("mdf-parallel.txt", "w+");
+  fprintf(stdout, "\nSaving mdf-parallel.txt");
+  fflush(stdout);
+  assert(ptr != NULL);
 
   for (unsigned int i = 1; i < depth; i++){
     for (unsigned int j = 1; j < height; j++){
       for (unsigned int k = 1; k < width; k++){
-                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
-
+        fprintf(ptr, "%lf ", u[coord(i, j, k)]);
       }
 
       for (unsigned int k = width-1; k > 0; k--){
-                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
-
+        fprintf(ptr, "%lf ", u[coord(i, j, k)]);
       }
       fprintf(ptr, "\n");
     }
     for (unsigned int j = height - 1 ; j > 0; j--){
       for (unsigned int k = 1; k < width; k++){
-                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
-
+        fprintf(ptr, "%lf ", u[coord(i, j, k)]);
       }
 
       for (unsigned int k = width-1; k > 0; k--){
-                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
-
-     }
+        fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+      }
+      fprintf(ptr, "\n");
+    }
     fprintf(ptr, "\n");
-   }
-   fprintf(ptr, "\n");
   }
 
   for (unsigned int i = depth - 1; i > 0; i--){
     for (unsigned int j = 1; j < height; j++){
       for (unsigned int k = 1; k < width; k++){
-                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
-
+        fprintf(ptr, "%lf ", u[coord(i, j, k)]);
       }
 
       for (unsigned int k = width-1; k > 0; k--){
-                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
-
+        fprintf(ptr, "%lf ", u[coord(i, j, k)]);
       }
       fprintf(ptr, "\n");
     }
     for (unsigned int j = height - 1 ; j > 0; j--){
       for (unsigned int k = 1; k < width; k++){
-                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
-
+        fprintf(ptr, "%lf ", u[coord(i, j, k)]);
       }
 
       for (unsigned int k = width-1; k > 0; k--){
-       fprintf(ptr, "%lf ", u[coord(i, j, k)]);
-
-     }
-     fprintf(ptr, "\n");
-   }
+        fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+      }
+      fprintf(ptr, "\n");
+    }
     fprintf(ptr, "\n");
   }
 
-   fprintf(stdout, "\t[OK]");
-   fclose(ptr);
+  fprintf(stdout, "\t[OK]");
+  fclose(ptr);
 }
 
 
@@ -254,12 +245,12 @@ void save2Bin(
    const unsigned int height,
    const unsigned int width
 ){
-   char fileName[256];
-   sprintf(fileName, "%s.bin", __FILE__);
-   FILE *file = fopen(fileName, "w+");
-   fprintf(stdout, "\nSaving %s", fileName);
-   fflush(stdout);
-   assert(file != NULL);
+  char fileName[256];
+  sprintf(fileName, "%s.bin", __FILE__);
+  FILE *file = fopen(fileName, "w+");
+  fprintf(stdout, "\nSaving %s", fileName);
+  fflush(stdout);
+  assert(file != NULL);
 
   for (unsigned int i = 1; i < depth; i++){
     for (unsigned int j = 1; j < height; j++){
@@ -278,8 +269,8 @@ void save2Bin(
 
       for (unsigned int k = width-1; k > 0; k--){
         fwrite(u + coord(i, j, k), sizeof(double), 1, file);
-     }
-   }
+      }
+    }
   }
 
   for (unsigned int i = depth - 1; i > 0; i--){
@@ -299,10 +290,11 @@ void save2Bin(
 
       for (unsigned int k = width-1; k > 0; k--){
         fwrite(u + coord(i, j, k), sizeof(double), 1, file);
-     }
-   }
+      }
+    }
   }
 
-   fprintf(stdout, "\t[OK]");
-   fclose(file);
+  fprintf(stdout, "\t[OK]");
+  fclose(file);
 }
+

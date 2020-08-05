@@ -8,7 +8,6 @@
 #        |     |   |--------------> Tamanho em metros do eixo Y
 #        |     |------------------> Tamanho em metros do eixo X
 #        |------------------------> tempo em segundos
-# time ./mdf-parallel 10.0 42 42 42 100 1 $1
-time ./mdf-parallel 0.5 4.0 4.0 4.0 100 2 $1
-time ./mdf 0.5 4.0 4.0 4.0 100 2 $1
+time ./mdf-parallel 10.0 42 42 42 100 1 $1
+# time ./mdf-parallel 0.02 2.0 2.0 2.0 100 2 $1
 # time ./mdf 0.02 2.0 2.0 2.0 100 1 $1
