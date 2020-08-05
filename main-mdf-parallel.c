@@ -109,6 +109,7 @@ void mdf_heat(double *  u0,
 
     const unsigned depthLimit = depth - 1;
     const unsigned heightLimit = height - 1;
+    const unsigned widthLimit = width - 1;
 
     const unsigned depthOffset = depth*height;
 
@@ -117,20 +118,22 @@ void mdf_heat(double *  u0,
       #pragma omp for
       for (unsigned int i = 1; i < depthLimit; i++){
         for (unsigned int j = 1; j < heightLimit; j++){
-          unsigned center = coord(i, j, 1);
+          for (unsigned int k = 1; k < widthLimit; k++){
+            unsigned center = coord(i, j, k);
 
-          unsigned left = center-1;
-          unsigned right = center+1;
-          unsigned up = center-height;
-          unsigned down = center+height;
-          unsigned top = center-depthOffset;
-          unsigned bottom = center+depthOffset;
+            unsigned left = center-1;
+            unsigned right = center+1;
+            unsigned up = center-height;
+            unsigned down = center+height;
+            unsigned top = center-depthOffset;
+            unsigned bottom = center+depthOffset;
 
-          unsigned widthLimit = center + width - 2;
-
-          for (; center < widthLimit; center++, left++, right++, up++, down++, top++, bottom++){
-            double surroundings = u0[top] + u0[bottom] + u0[up] + u0[down] + u0[left] + u0[right];
-            u1[center] =  alpha * (surroundings  - 6.0f * u0[center]) + u0[center];
+            // this loop should be unnecessary because of the loop at ln121
+            // but for some reason it makes the code insanely faster
+            for (; center < widthLimit; center++, left++, right++, up++, down++, top++, bottom++){
+              double surroundings = u0[top] + u0[bottom] + u0[up] + u0[down] + u0[left] + u0[right];
+              u1[center] =  alpha * (surroundings  - 6.0f * u0[center]) + u0[center];
+            }
           }
         }
       }
