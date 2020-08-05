@@ -24,7 +24,12 @@ void mdf_heat(double * u0,
 /*                const unsigned int height, */
 /*                const unsigned int depth); */
 
-void save2Bin(double *u, const unsigned int size);
+void save2Bin(
+   double *u,
+   const unsigned int depth,
+   const unsigned int height,
+   const unsigned int width
+);
 
 int main (int ac, char **av){
   double *u0;
@@ -39,9 +44,9 @@ int main (int ac, char **av){
   int flag2save = atoi(av[6]);
 
 
-  unsigned int width = (unsigned int) (continuousWidth / deltaH); //Number of points in X axis
-  unsigned int height = (unsigned int) (continuousHeight / deltaH);
-  unsigned int depth = (unsigned int) (continuousDepth / deltaH);
+  unsigned int width = (unsigned int) (continuousWidth / deltaH) + 2; //Number of points in X axis
+  unsigned int height = (unsigned int) (continuousHeight / deltaH) + 2;
+  unsigned int depth = (unsigned int) (continuousDepth / deltaH) + 2;
   unsigned int size = width*height*depth;
 
   unsigned int tsteps = (unsigned int) (time / deltaT);
@@ -51,10 +56,41 @@ int main (int ac, char **av){
   u0 = (double*) calloc (size, sizeof(double));
   u1 = (double*) calloc (size, sizeof(double));
 
+  for (unsigned i = 0; i < depth; i++) {
+    for (unsigned j = 0; j < height; j++) {
+      for (unsigned k = 0; k < width; k++) {
+        if (
+          k == 0 || j == 0 || i == 0 ||
+          k == depth-1 || j == height-1 || i == depth-1
+        ) {
+          u0[coord(i, j, k)] = temp;
+          u1[coord(i, j, k)] = temp;
+        }
+      }
+    }
+  }
+
+  // fill borders
+  /* for (unsigned i = 0; i < depth; i += depth-1) { */
+  /*   for (unsigned k = 0; k < width; k++) { */
+  /*     u0[coord(i, 0, k)] = temp; */
+  /*     u0[coord(i, height-1, k)] = temp; */
+  /*     u1[coord(i, 0, k)] = temp; */
+  /*     u1[coord(i, height-1, k)] = temp; */
+  /*   } */
+
+  /*   for (unsigned j = 0; j < height; j++) { */
+  /*     u0[coord(i, j, 0)] = temp; */
+  /*     u0[coord(i, j, width-1)] = temp; */
+  /*     u1[coord(i, j, 0)] = temp; */
+  /*     u1[coord(i, j, width-1)] = temp; */
+  /*   } */
+  /* } */
+
   mdf_heat(u0, u1, width, height, depth, deltaH, deltaT, tsteps, temp);
 
   if (flag2save == 1)
-    save2Bin(u0, size);
+    save2Bin(u0, depth, height, width);
 
   free(u0);
   free(u1);
@@ -79,41 +115,26 @@ void mdf_heat(double *  u0,
 
     unsigned int step = tsteps / 20;
 
+    unsigned depthLimit = depth - 1;
+    unsigned heightLimit = height - 1;
+    unsigned widthLimit = width - 1;
+
     for (unsigned int steps = 0; steps < tsteps; steps++){
-      for (unsigned int i = 0; i < depth; i++){
-        for (unsigned int j = 0; j < height; j++){
-          for (unsigned int k = 0; k < width; k++){
+      for (unsigned int i = 1; i < depthLimit; i++){
+        for (unsigned int j = 1; j < heightLimit; j++){
+          for (unsigned int k = 1; k < widthLimit; k++){
             unsigned int center = coord(i, j, k);
             unsigned int heightUp = coord(i, j-1, k);
             unsigned int heightDown = coord(i, j+1, k);
             unsigned int depthUp = coord(i-1, j, k);
             unsigned int depthDown = coord(i+1, j, k);
 
-            double left   = boundaries;
-            double right  = boundaries;
-            double up     = boundaries;
-            double down   = boundaries;
-            double top    = boundaries;
-            double bottom = boundaries;
-
-            if ((k > 0) && (k < (width - 1))){
-              left  = u0[center-1];
-              right = u0[center+1];
-            }else if (k == 0) right = u0[center+1];
-            else left = u0[center-1];
-
-            if ((j > 0) && (j < (height - 1))){
-              up  = u0[heightUp];
-              down = u0[heightDown];
-            }else if (j == 0) down = u0[heightDown];
-            else up = u0[heightUp];
-
-            if ((i > 0) && (i < (depth - 1))){
-              top  = u0[depthUp];
-              bottom = u0[depthDown];
-            }else if (i == 0) bottom = u0[depthDown];
-            else top = u0[depthUp];
-
+            double left  = u0[center-1];
+            double right = u0[center+1];
+            double up  = u0[heightUp];
+            double down = u0[heightDown];
+            double top  = u0[depthUp];
+            double bottom = u0[depthDown];
 
             u1[center] =  alpha * ( top + bottom + up + down + left + right  - (6.0f * u0[center] )) + u0[center];
           }
@@ -161,7 +182,12 @@ void mdf_heat(double *  u0,
  * Salva a saída em binário. Uso do comando diff para verificar se a saída está ok
  */
 
-void save2Bin(double *u, const unsigned int size){
+void save2Bin(
+   double *u,
+   const unsigned int depth,
+   const unsigned int height,
+   const unsigned int width
+){
    char fileName[256];
    sprintf(fileName, "%s.bin", __FILE__);
    FILE *file = fopen(fileName, "w+");
@@ -169,7 +195,14 @@ void save2Bin(double *u, const unsigned int size){
    fflush(stdout);
    assert(file != NULL);
 
-   fwrite(u, sizeof(double), size, file);
+   for (unsigned int i = 1; i < depth-1; i++){
+     for (unsigned int j = 1; j < height-1; j++){
+      /* fwrite(u + coord(i, j, 1), sizeof(double), width-1, file); */
+       for (unsigned int k = 1; k < width-1; k++) {
+        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
+       }
+     }
+   }
 
    fprintf(stdout, "\t[OK]");
    fclose(file);
