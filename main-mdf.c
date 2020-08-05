@@ -73,7 +73,10 @@ int main (int ac, char **av){
   mdf_heat(u0, u1, npX, npY, npZ, deltaH, deltaT, tsteps, temp);
 
   if (flag2save == 1) {
-    /* save2Bin(u0, npX, npY, npZ); */
+     save2Bin(u0, npX, npY, npZ); 
+  }
+  else
+  if(flag2save == 2){
     save2Text(u0, npX, npY, npZ);
   }
 

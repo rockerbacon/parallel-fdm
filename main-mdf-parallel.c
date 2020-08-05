@@ -153,7 +153,7 @@ void mdf_heat(double *  u0,
 
             double surroundings = u0[top] + u0[bottom] + u0[up] + u0[down] + u0[left] + u0[right];
 
-            u1[center] =alpha * (surroundings  - 6.0f * u0[center]) + u0[center];
+            u1[center] =alpha * (surroundings  - 6.0 * u0[center]) + u0[center];
           }
         }
       }
@@ -183,15 +183,61 @@ void save2Text(double *u,
    fflush(stdout);
    assert(ptr != NULL);
 
-   for (unsigned int i = 0; i < depth; i++){
-     for (unsigned int j = 0; j < height; j++){
-       for (unsigned int k = 0; k < width; k++){
-         fprintf(ptr, "%lf ", u[coord(i, j, k)]);
-       }
-       fprintf(ptr, "\n");
+  for (unsigned int i = 1; i < depth; i++){
+    for (unsigned int j = 1; j < height; j++){
+      for (unsigned int k = 1; k < width; k++){
+                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+
+      }
+
+      for (unsigned int k = width-1; k > 0; k--){
+                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+
+      }
+      fprintf(ptr, "\n");
+    }
+    for (unsigned int j = height - 1 ; j > 0; j--){
+      for (unsigned int k = 1; k < width; k++){
+                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+
+      }
+
+      for (unsigned int k = width-1; k > 0; k--){
+                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+
+     }
+    fprintf(ptr, "\n");
+   }
+   fprintf(ptr, "\n");
+  }
+
+  for (unsigned int i = depth - 1; i > 0; i--){
+    for (unsigned int j = 1; j < height; j++){
+      for (unsigned int k = 1; k < width; k++){
+                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+
+      }
+
+      for (unsigned int k = width-1; k > 0; k--){
+                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+
+      }
+      fprintf(ptr, "\n");
+    }
+    for (unsigned int j = height - 1 ; j > 0; j--){
+      for (unsigned int k = 1; k < width; k++){
+                 fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+
+      }
+
+      for (unsigned int k = width-1; k > 0; k--){
+       fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+
      }
      fprintf(ptr, "\n");
    }
+    fprintf(ptr, "\n");
+  }
 
    fprintf(stdout, "\t[OK]");
    fclose(ptr);
@@ -215,11 +261,47 @@ void save2Bin(
    fflush(stdout);
    assert(file != NULL);
 
-   for (unsigned int i = 1; i < depth-1; i++){
-     for (unsigned int j = 1; j < height-1; j++){
-      fwrite(u + coord(i, j, 1), sizeof(double), width-2, file);
+  for (unsigned int i = 1; i < depth; i++){
+    for (unsigned int j = 1; j < height; j++){
+      for (unsigned int k = 1; k < width; k++){
+        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
+      }
+
+      for (unsigned int k = width-1; k > 0; k--){
+        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
+      }
+    }
+    for (unsigned int j = height - 1 ; j > 0; j--){
+      for (unsigned int k = 1; k < width; k++){
+        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
+      }
+
+      for (unsigned int k = width-1; k > 0; k--){
+        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
      }
    }
+  }
+
+  for (unsigned int i = depth - 1; i > 0; i--){
+    for (unsigned int j = 1; j < height; j++){
+      for (unsigned int k = 1; k < width; k++){
+        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
+      }
+
+      for (unsigned int k = width-1; k > 0; k--){
+        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
+      }
+    }
+    for (unsigned int j = height - 1 ; j > 0; j--){
+      for (unsigned int k = 1; k < width; k++){
+        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
+      }
+
+      for (unsigned int k = width-1; k > 0; k--){
+        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
+     }
+   }
+  }
 
    fprintf(stdout, "\t[OK]");
    fclose(file);
