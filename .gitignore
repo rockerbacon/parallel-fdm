@@ -3,3 +3,4 @@
 *.bin
 mdf
 mdf-parallel
+*.log

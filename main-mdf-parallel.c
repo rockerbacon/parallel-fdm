@@ -101,26 +101,26 @@ void mdf_heat(double *  u0,
 
     unsigned depthLimit = depth - 1;
     unsigned heightLimit = height - 1;
-    unsigned widthLimit = width - 1;
+
+    unsigned depthOffset = depth*height;
 
     for (unsigned int steps = 0; steps < tsteps; steps++){
       for (unsigned int i = 1; i < depthLimit; i++){
         for (unsigned int j = 1; j < heightLimit; j++){
-          for (unsigned int k = 1; k < widthLimit; k++){
-            unsigned int center = coord(i, j, k);
-            unsigned int heightUp = coord(i, j-1, k);
-            unsigned int heightDown = coord(i, j+1, k);
-            unsigned int depthUp = coord(i-1, j, k);
-            unsigned int depthDown = coord(i+1, j, k);
+          unsigned center = coord(i, j, 1);
 
-            double left  = u0[center-1];
-            double right = u0[center+1];
-            double up  = u0[heightUp];
-            double down = u0[heightDown];
-            double top  = u0[depthUp];
-            double bottom = u0[depthDown];
+          unsigned left = center-1;
+          unsigned right = center+1;
+          unsigned up = center-height;
+          unsigned down = center+height;
+          unsigned top = center-depthOffset;
+          unsigned bottom = center+depthOffset;
 
-            u1[center] =  alpha * ( top + bottom + up + down + left + right  - (6.0f * u0[center] )) + u0[center];
+          unsigned widthLimit = center + width - 2;
+
+          for (; center < widthLimit; center++, left++, right++, up++, down++, top++, bottom++){
+            double surroundings = u0[top] + u0[bottom] + u0[up] + u0[down] + u0[left] + u0[right];
+            u1[center] =  alpha * (surroundings  - 6.0f * u0[center]) + u0[center];
           }
         }
       }
