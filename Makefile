@@ -15,7 +15,7 @@ original:
 	$(CPU_COMPILE_C) main-mdf.c  $(LINK)   -o mdf
 
 parallel:
-	$(CPU_COMPILE_C) main-mdf-parallel.c  $(LINK)   -o mdf-parallel
+	$(CPU_COMPILE_C) -fopenmp main-mdf-parallel.c  $(LINK)   -o mdf-parallel
 
 clean:
 	rm mdf

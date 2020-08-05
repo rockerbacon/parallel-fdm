@@ -11,13 +11,18 @@
 #        |------------------------> tempo em segundos
 args="10.0 42 42 42 100 1"
 
+comp_type=$2
+
 make
 exit_status=$?
 if [ "$exit_status" != "0" ]; then
 	exit $exit_status
 fi
 
-# time ./mdf $args
+if [ "$comp_type" == "time" ]; then
+	time ./mdf $args
+fi
+
 time ./mdf-parallel $args $1
 
 echo

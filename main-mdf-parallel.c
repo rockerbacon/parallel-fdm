@@ -4,6 +4,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <math.h>
+#include <omp.h>
 
 #define coord(i, j, k) ((i)*width*height + (j)*width + k)
 
@@ -17,7 +18,7 @@ void mdf_heat(double * u0,
               const double deltaH,
               const double deltaT,
               const unsigned int tsteps,
-              const double boundaries);
+              const int threads);
 
 /* void save2Text(double *u, */
 /*                const unsigned int width, */
@@ -43,6 +44,13 @@ int main (int ac, char **av){
   double temp   = atof(av[5]);
   int flag2save = atoi(av[6]);
 
+  int threads = -1;
+  if (ac > 7) {
+    threads = atoi(av[7]);
+  }
+
+  if (threads == -1) threads = omp_get_num_procs();
+
 
   unsigned int width = (unsigned int) (continuousWidth / deltaH) + 2; //Number of points in X axis
   unsigned int height = (unsigned int) (continuousHeight / deltaH) + 2;
@@ -50,7 +58,7 @@ int main (int ac, char **av){
   unsigned int size = width*height*depth;
 
   unsigned int tsteps = (unsigned int) (time / deltaT);
-  fprintf(stdout, "\nSimulação - Domínio(x = %u, y = %u, z = %u, t = %u\n", width, height, depth, tsteps);
+  fprintf(stdout, "\nSimulação - Domínio(x = %u, y = %u, z = %u, t = %u, threads = %d\n", width-2, height-2, depth-2, tsteps, threads);
   fprintf(stdout, "Dt(%f) Dh(%f)\n", deltaT, deltaH);
 
   u0 = (double*) calloc (size, sizeof(double));
@@ -71,7 +79,7 @@ int main (int ac, char **av){
     }
   }
 
-  mdf_heat(u0, u1, width, height, depth, deltaH, deltaT, tsteps, temp);
+  mdf_heat(u0, u1, width, height, depth, deltaH, deltaT, tsteps, threads);
 
   if (flag2save == 1)
     save2Bin(u0, depth, height, width);
@@ -92,19 +100,20 @@ void mdf_heat(double *  u0,
               const double deltaH,
               const double deltaT,
               const unsigned int tsteps,
-              const double boundaries){
+              const int threads){
 
     const double alpha = deltaT / (deltaH * deltaH);
     assert(alpha < STABILITY);
 
     unsigned int step = tsteps / 20;
 
-    unsigned depthLimit = depth - 1;
-    unsigned heightLimit = height - 1;
+    const unsigned depthLimit = depth - 1;
+    const unsigned heightLimit = height - 1;
 
-    unsigned depthOffset = depth*height;
+    const unsigned depthOffset = depth*height;
 
     for (unsigned int steps = 0; steps < tsteps; steps++){
+      #pragma omp parallel for num_threads(threads)
       for (unsigned int i = 1; i < depthLimit; i++){
         for (unsigned int j = 1; j < heightLimit; j++){
           unsigned center = coord(i, j, 1);
@@ -133,7 +142,6 @@ void mdf_heat(double *  u0,
         fprintf(stdout, ".");
         fflush(stdout);
       }
-
     }
 }
 /*
