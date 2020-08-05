@@ -20,10 +20,12 @@ void mdf_heat(double * u0,
               const unsigned int tsteps,
               const int threads);
 
-/* void save2Text(double *u, */
-/*                const unsigned int width, */
-/*                const unsigned int height, */
-/*                const unsigned int depth); */
+void save2Text(
+  double *u,
+  const unsigned int depth,
+  const unsigned int height,
+  const unsigned int width
+);
 
 void save2Bin(
    double *u,
@@ -81,8 +83,11 @@ int main (int ac, char **av){
 
   mdf_heat(u0, u1, width, height, depth, deltaH, deltaT, tsteps, threads);
 
-  if (flag2save == 1)
+  if (flag2save == 1) {
     save2Bin(u0, depth, height, width);
+  } else if (flag2save == 2) {
+    save2Text(u0, depth, height, width);
+  }
 
   free(u0);
   free(u1);
@@ -107,10 +112,14 @@ void mdf_heat(double *  u0,
 
     unsigned int step = tsteps / 20 + 1;
 
-    const unsigned depthLimit = (depth - 1)/2;
-    const unsigned heightLimit = (height - 1)/2;
-    const unsigned widthLimit = (width - 1)/2;
+    const unsigned depthLimit = depth/2;
+    const unsigned heightLimit = height/2;
+    const unsigned widthLimit = width/2;
     const unsigned depthOffset = width*height;
+
+    const unsigned backMirrorPlane = depthLimit - 2;
+    const unsigned sideMirrorPlane = widthLimit - 2;
+    const unsigned bottomMirrorPlane = heightLimit - 2;
 
     /* const unsigned mirrorRight = width/2; */
     /* const unsigned mirrorDown = height/2*width; */
@@ -118,12 +127,13 @@ void mdf_heat(double *  u0,
 
     #pragma omp parallel num_threads(threads)
     for (unsigned steps = 0; steps < tsteps; steps++){
+      // collapsing this + no wait can improve performance
+      // but when I tried it introduced race conditions when filling the border
       #pragma omp for
       for (unsigned i = 1; i < depthLimit; i++){
         for (unsigned j = 1; j < heightLimit; j++){
-          unsigned line = coord(i, j, 1);
           for (unsigned k = 1; k < widthLimit; k++) {
-            unsigned center = line+k;
+            unsigned center = coord(i, j, k);
 
             unsigned left = center-1;
             unsigned right = center+1;
@@ -136,6 +146,27 @@ void mdf_heat(double *  u0,
 
             u1[center] = alpha * (surroundings  - 6.0f * u0[center]) + u0[center];
           }
+        }
+      }
+
+      #pragma omp for nowait
+      for (unsigned j = 1; j < heightLimit; j++) {
+        for(unsigned k = 1; k < widthLimit; k++) {
+          u1[coord(depthLimit, j, k)] = u1[coord(backMirrorPlane, j, k)];
+        }
+      }
+
+      #pragma omp for nowait
+      for (unsigned i = 1; i < depthLimit; i++) {
+        for (unsigned k = 1; k < widthLimit; k++) {
+          u1[coord(i, heightLimit, k)] = u1[coord(i, bottomMirrorPlane, k)];
+        }
+      }
+
+      #pragma omp for
+      for (unsigned i = 1; i < depthLimit; i++) {
+        for (unsigned j = 1; j < heightLimit; j++) {
+          u1[coord(i, j, widthLimit)] = u1[coord(i, j, sideMirrorPlane)];
         }
       }
 
@@ -155,27 +186,28 @@ void mdf_heat(double *  u0,
 /*
  * Salva a saída para texto. Valores tendem a ficar próximos de 100
  */
-/* void save2Text(double *u, */
-/*                const unsigned int width, */
-/*                const unsigned int height, */
-/*                const unsigned int depth){ */
-/*    FILE *ptr = fopen("mdf.txt", "w+"); */
-/*    fprintf(stdout, "\nSaving mdf.txt"); */
-/*    fflush(stdout); */
-/*    assert(ptr != NULL); */
+void save2Text(double *u,
+               const unsigned int width,
+               const unsigned int height,
+               const unsigned int depth){
+   FILE *ptr = fopen("mdf-parallel.txt", "w+");
+   fprintf(stdout, "\nSaving mdf-parallel.txt");
+   fflush(stdout);
+   assert(ptr != NULL);
 
-/*    for (unsigned int i = 0; i < depth; i++){ */
-/*      for (unsigned int j = 0; j < height; j++){ */
-/*        for (unsigned int k = 0; k < width; k++){ */
-/*            fprintf(ptr, "%u %u %u %lf \n", k, j, i, u[coord(i, j, k)]); */
-/*        } */
-/*      } */
-/*    } */
+   for (unsigned int i = 0; i < depth; i++){
+     for (unsigned int j = 0; j < height; j++){
+       for (unsigned int k = 0; k < width; k++){
+         fprintf(ptr, "%lf ", u[coord(i, j, k)]);
+       }
+       fprintf(ptr, "\n");
+     }
+     fprintf(ptr, "\n");
+   }
 
-/*    fprintf(stdout, "\t[OK]"); */
-/*    fclose(ptr); */
-
-/* } */
+   fprintf(stdout, "\t[OK]");
+   fclose(ptr);
+}
 
 
 /*

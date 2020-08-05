@@ -18,4 +18,6 @@ parallel:
 	$(CPU_COMPILE_C) -fopenmp main-mdf-parallel.c  $(LINK)   -o mdf-parallel
 
 clean:
-	rm mdf
+	rm -f mdf
+	rm -f mdf-parallel
+
