@@ -56,6 +56,7 @@ int main (int ac, char **av){
   u0 = (double*) calloc (size, sizeof(double));
   u1 = (double*) calloc (size, sizeof(double));
 
+  // fill borders
   for (unsigned i = 0; i < depth; i++) {
     for (unsigned j = 0; j < height; j++) {
       for (unsigned k = 0; k < width; k++) {
@@ -69,23 +70,6 @@ int main (int ac, char **av){
       }
     }
   }
-
-  // fill borders
-  /* for (unsigned i = 0; i < depth; i += depth-1) { */
-  /*   for (unsigned k = 0; k < width; k++) { */
-  /*     u0[coord(i, 0, k)] = temp; */
-  /*     u0[coord(i, height-1, k)] = temp; */
-  /*     u1[coord(i, 0, k)] = temp; */
-  /*     u1[coord(i, height-1, k)] = temp; */
-  /*   } */
-
-  /*   for (unsigned j = 0; j < height; j++) { */
-  /*     u0[coord(i, j, 0)] = temp; */
-  /*     u0[coord(i, j, width-1)] = temp; */
-  /*     u1[coord(i, j, 0)] = temp; */
-  /*     u1[coord(i, j, width-1)] = temp; */
-  /*   } */
-  /* } */
 
   mdf_heat(u0, u1, width, height, depth, deltaH, deltaT, tsteps, temp);
 
@@ -197,10 +181,7 @@ void save2Bin(
 
    for (unsigned int i = 1; i < depth-1; i++){
      for (unsigned int j = 1; j < height-1; j++){
-      /* fwrite(u + coord(i, j, 1), sizeof(double), width-1, file); */
-       for (unsigned int k = 1; k < width-1; k++) {
-        fwrite(u + coord(i, j, k), sizeof(double), 1, file);
-       }
+      fwrite(u + coord(i, j, 1), sizeof(double), width-2, file);
      }
    }
 
