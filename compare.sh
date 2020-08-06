@@ -11,21 +11,21 @@
 #        |------------------------> tempo em segundos
 args="10.0 42 42 42 100 1"
 
+rm -f main-mdf-parallel.c.bin
+
 make
+exit_status=$?
+if [ "$exit_status" != "0" ]; then
+	exit $exit_status
+fi
 
 time ./mdf $args
+
 time ./mdf-parallel $args $1
 
 echo
 
-cmp main-mdf.c.bin main-mdf-parallel.c.bin
-exit_status=$?
-
-if [ "$exit_status" == "0" ]; then
-	echo "PROGRAM WORKING CORRECTLY"
-else
-	echo "FILES ARE DIFFERENT!!!!!!"
-fi
+./diff
 
 exit $exit_status
 

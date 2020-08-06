@@ -3,3 +3,5 @@
 *.bin
 mdf
 mdf-parallel
+diff
+*.log

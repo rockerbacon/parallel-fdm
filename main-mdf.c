@@ -72,8 +72,13 @@ int main (int ac, char **av){
 
   mdf_heat(u0, u1, npX, npY, npZ, deltaH, deltaT, tsteps, temp);
 
-  if (flag2save == 1)
-    save2Bin(u0, npX, npY, npZ);
+  if (flag2save == 1) {
+     save2Bin(u0, npX, npY, npZ); 
+  }
+  else
+  if(flag2save == 2){
+    save2Text(u0, npX, npY, npZ);
+  }
 
 
   //Free memory
@@ -113,7 +118,7 @@ void mdf_heat(double ***  __restrict__ u0,
     const double alpha = deltaT / (deltaH * deltaH);
     assert(alpha < STABILITY);
 
-    unsigned int step = tsteps / 20;
+    unsigned int step = tsteps / 20 + 1;
 
     for ( unsigned int steps = 0; steps < tsteps; steps++){
               for (unsigned int i = 0; i < npZ; i++){
@@ -176,9 +181,11 @@ void save2Text(double ***u,
    for (unsigned int i = 0; i < npZ; i++){
      for (unsigned int j = 0; j < npY; j++){
        for (unsigned int k = 0; k < npX; k++){
-           fprintf(ptr, "%u %u %u %lf \n", k, j, i, u[i][j][k]);
+           fprintf(ptr, "%lf ", u[i][j][k]);
        }
+       fprintf(ptr, "\n");
      }
+     fprintf(ptr, "\n");
    }
 
    fprintf(stdout, "\t[OK]");
